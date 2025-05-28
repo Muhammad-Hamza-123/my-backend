@@ -25,13 +25,18 @@ const PORT = process.env.PORT || 5000;
 // Security Middleware
 app.use(helmet());
 const allowedOrigins = [
- 'https://my-frontend-xi.vercel.app',
-
-  'http://localhost:3000', // optional, for dev
+  'https://my-frontend-xi.vercel.app',
+  'http://localhost:3000',
 ];
 
 app.use(cors({
-  origin: allowedOrigins,
+  origin: function (origin, callback) {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true,
 }));
 
