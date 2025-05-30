@@ -3,6 +3,8 @@ const router = express.Router();
 const authMiddleware = require('../middleware/authMiddleware');
 const Conversation = require('../models/conversation');
 const OpenAI = require('openai');
+require('dotenv').config();
+
 
 // Init OpenAI with the new version
 const openai = new OpenAI({
