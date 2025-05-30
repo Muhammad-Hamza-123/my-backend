@@ -9,7 +9,7 @@ const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const authRoutes = require('./routes/authRoutes');
 const chatRoutes = require('./routes/chat');
-app.set('trust proxy', 1);
+
 
 // Load environment variables
 dotenv.config();
