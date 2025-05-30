@@ -31,7 +31,8 @@ router.post('/send', authMiddleware, async (req, res) => {
   try {
     // Call Hugging Face GPT-2 Inference API
     const hfResponse = await axios.post(
-      'https://api-inference.huggingface.co/models/gpt2',
+      'https://api-inference.huggingface.co/models/facebook/blenderbot-400M-distill'
+,
       { inputs: message },
       {
         headers: {
