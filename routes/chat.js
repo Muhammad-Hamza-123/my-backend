@@ -2,13 +2,12 @@ const express = require('express');
 const router = express.Router();
 const authMiddleware = require('../middleware/authMiddleware');
 const Conversation = require('../models/conversation');
-const { Configuration, OpenAIApi } = require('openai');
+const OpenAI = require('openai');
 
-// Init OpenAI API with your secret key
-const configuration = new Configuration({
-  apiKey: process.env.OPENAI_API_KEY, // make sure this is in Railway env vars
+// Init OpenAI with the new version
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY, // ensure this is in Railway environment variables
 });
-const openai = new OpenAIApi(configuration);
 
 // Get chat history
 router.get('/history', authMiddleware, async (req, res) => {
@@ -34,13 +33,13 @@ router.post('/send', authMiddleware, async (req, res) => {
   if (!message) return res.status(400).json({ message: 'Message cannot be empty' });
 
   try {
-    const completion = await openai.createChatCompletion({
-      model: 'gpt-3.5-turbo', // or 'gpt-4' if you have access
+    const completion = await openai.chat.completions.create({
+      model: 'gpt-3.5-turbo', // or 'gpt-4'
       messages: [{ role: 'user', content: message }],
       temperature: 0.7,
     });
 
-    const botReply = completion.data.choices[0].message.content.trim();
+    const botReply = completion.choices[0].message.content.trim();
 
     // Save to DB
     let convo = await Conversation.findOne({ user: req.user._id });
