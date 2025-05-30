@@ -29,7 +29,7 @@ router.get('/history', authMiddleware, async (req, res) => {
     return res.status(429).json({ message: 'You have exceeded your OpenAI quota. Please check your usage or billing.' });
   }
   console.error('OpenAI API error:', error.response?.data || error.message);
-  res.status(500).json({ message: 'Failed to get response from chatbot.' });
+   return res.status(500).json({ message: 'Failed to get response from chatbot.'||error.response?.data?.message });
 }
 
 });
