@@ -2,9 +2,9 @@ const express = require('express');
 const router = express.Router();
 const authMiddleware = require('../middleware/authMiddleware');
 const Conversation = require('../models/conversation');
-const axios = require('axios');  // Make sure axios is imported
+const axios = require('axios');  // For Hugging Face API calls
 
-// Route to get conversation history
+// Get chat history
 router.get('/history', authMiddleware, async (req, res) => {
   try {
     const convo = await Conversation.findOne({ user: req.user._id });
@@ -22,7 +22,7 @@ router.get('/history', authMiddleware, async (req, res) => {
   }
 });
 
-// Route to send message and get bot reply from Hugging Face
+// Send message and get response from Hugging Face API
 router.post('/send', authMiddleware, async (req, res) => {
   const { message } = req.body;
 
@@ -30,7 +30,7 @@ router.post('/send', authMiddleware, async (req, res) => {
 
   try {
     const hfResponse = await axios.post(
-      `https://api-inference.huggingface.co/models/tiiuae/falcon-7b-instruct`,
+      'https://api-inference.huggingface.co/models/microsoft/DialoGPT-medium',  // ⚠️ SMALLER MODEL
       { inputs: message },
       {
         headers: {
@@ -41,7 +41,7 @@ router.post('/send', authMiddleware, async (req, res) => {
       }
     );
 
-    const botReply = hfResponse.data?.[0]?.generated_text || "Sorry, I couldn't generate a response.";
+    const botReply = hfResponse.data?.generated_text || "Sorry, I couldn't generate a response.";
 
     let convo = await Conversation.findOne({ user: req.user._id });
     if (!convo) convo = new Conversation({ user: req.user._id, messages: [] });
