@@ -1,54 +1,34 @@
 const express = require('express');
 const router = express.Router();
+const axios = require('axios');
 const authMiddleware = require('../middleware/authMiddleware');
 const Conversation = require('../models/conversation');
-const OpenAI = require('openai');
 require('dotenv').config();
 
+const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY; // put your key in .env file
 
-// Init OpenAI with the new version
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY, // ensure this is in Railway environment variables
-});
-
-// Get chat history
-router.get('/history', authMiddleware, async (req, res) => {
-  try {
-    const convo = await Conversation.findOne({ user: req.user._id });
-    if (!convo) return res.json({ history: [] });
-
-    const formatted = convo.messages.map(msg => ({
-      sender: msg.sender,
-      text: msg.message
-    }));
-
-    res.json({ history: formatted });
-  } catch (error) {
-  const status = error.response?.status;
-  if (status === 429) {
-    return res.status(429).json({ message: 'You have exceeded your OpenAI quota. Please check your usage or billing.' });
-  }
-  console.error('OpenAI API error:', error.response?.data || error.message);
-   return res.status(500).json({ message: 'Failed to get response from chatbot.'||error.response?.data?.message });
-}
-
-});
-
-// Send message and get response from OpenAI
 router.post('/send', authMiddleware, async (req, res) => {
   const { message } = req.body;
   if (!message) return res.status(400).json({ message: 'Message cannot be empty' });
 
   try {
-    const completion = await openai.chat.completions.create({
-      model: 'gpt-3.5-turbo', // or 'gpt-4'
-      messages: [{ role: 'user', content: message }],
-      temperature: 0.7,
-    });
+    const response = await axios.post(
+      'https://openrouter.ai/api/v1/chat/completions',
+      {
+        model: 'gpt-3.5-turbo',  // OpenRouter supports this for compatibility
+        messages: [{ role: 'user', content: message }],
+      },
+      {
+        headers: {
+          'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+      }
+    );
 
-    const botReply = completion.choices[0].message.content.trim();
+    const botReply = response.data.choices[0].message.content.trim();
 
-    // Save to DB
+    // Save conversation
     let convo = await Conversation.findOne({ user: req.user._id });
     if (!convo) convo = new Conversation({ user: req.user._id, messages: [] });
 
@@ -59,10 +39,12 @@ router.post('/send', authMiddleware, async (req, res) => {
     res.json({ message: botReply });
 
   } catch (error) {
-  console.error('OpenAI API error:', error.response?.data || error.message);
-  res.status(500).json({ message: 'Failed to get response from chatbot.' });
-}
-
+    console.error('OpenRouter API error:', error.response?.data || error.message);
+    if (error.response?.status === 429) {
+      return res.status(429).json({ message: 'OpenRouter quota exceeded. Please check your usage.' });
+    }
+    res.status(500).json({ message: 'Failed to get response from chatbot.' });
+  }
 });
 
 module.exports = router;
