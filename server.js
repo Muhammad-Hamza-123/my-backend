@@ -9,6 +9,7 @@ const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const authRoutes = require('./routes/authRoutes');
 const chatRoutes = require('./routes/chat');
+app.set('trust proxy', 1);
 
 // Load environment variables
 dotenv.config();
@@ -20,6 +21,7 @@ if (!process.env.MONGO_URI) {
 }
 
 const app = express();
+app.set('trust proxy', 1);
 const PORT = process.env.PORT || 5000;
 
 // Security Middleware
