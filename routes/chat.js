@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const authMiddleware = require('../middleware/authMiddleware');
 const Conversation = require('../models/conversation');
-const axios = require('axios');  // For Hugging Face API calls
+const axios = require('axios');
 
 // Get chat history
 router.get('/history', authMiddleware, async (req, res) => {
@@ -29,8 +29,9 @@ router.post('/send', authMiddleware, async (req, res) => {
   if (!message) return res.status(400).json({ message: 'Message cannot be empty' });
 
   try {
+    // Call Hugging Face GPT-2 Inference API
     const hfResponse = await axios.post(
-      'https://api-inference.huggingface.co/models/microsoft/DialoGPT-medium',  // ⚠️ SMALLER MODEL
+      'https://api-inference.huggingface.co/models/gpt2',
       { inputs: message },
       {
         headers: {
@@ -41,8 +42,10 @@ router.post('/send', authMiddleware, async (req, res) => {
       }
     );
 
-    const botReply = hfResponse.data?.generated_text || "Sorry, I couldn't generate a response.";
+    // Parse the generated text from the response
+    const botReply = hfResponse.data[0]?.generated_text || "Sorry, I couldn't generate a response.";
 
+    // Save conversation to MongoDB
     let convo = await Conversation.findOne({ user: req.user._id });
     if (!convo) convo = new Conversation({ user: req.user._id, messages: [] });
 
@@ -53,14 +56,14 @@ router.post('/send', authMiddleware, async (req, res) => {
     res.json({ message: botReply });
 
   } catch (error) {
-  if (error.response) {
-    console.error('Hugging Face API error data:', error.response.data);
-    console.error('Hugging Face API error status:', error.response.status);
-  } else {
-    console.error('Error message:', error.message);
+    if (error.response) {
+      console.error('Hugging Face API error data:', error.response.data);
+      console.error('Hugging Face API error status:', error.response.status);
+    } else {
+      console.error('Error message:', error.message);
+    }
+    res.status(500).json({ message: 'Failed to get response from chatbot.' });
   }
-  res.status(500).json({ message: 'Failed to get response from chatbot.' });
-}
 });
 
 module.exports = router;
