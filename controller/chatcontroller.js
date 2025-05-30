@@ -13,7 +13,7 @@ exports.sendMessage = async (req, res) => {
   const cleanedMessage = message.replace(/(\b.+?\b)(\s+\1)+/gi, "$1");
 
   try {
-    const response = await axios.post('http://localhost:8000/chat', {
+    const response = await axios.post('${process.env.REACT_APP_CHATBOT_MODEL_URL}/chat', {
       message: cleanedMessage,
     });
 
