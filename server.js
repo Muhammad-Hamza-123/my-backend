@@ -9,6 +9,9 @@ const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const authRoutes = require('./routes/authRoutes');
 const chatRoutes = require('./routes/chat');
+if (process.env.NODE_ENV !== 'production') {
+  require('dotenv').config();
+}
 
 
 // Load environment variables

@@ -54,9 +54,10 @@ router.post('/send', authMiddleware, async (req, res) => {
     res.json({ message: botReply });
 
   } catch (error) {
-    console.error('OpenAI API error:', error.message);
-    res.status(500).json({ message: 'Failed to get response from chatbot.' });
-  }
+  console.error('OpenAI API error:', error.response?.data || error.message);
+  res.status(500).json({ message: 'Failed to get response from chatbot.' });
+}
+
 });
 
 module.exports = router;
