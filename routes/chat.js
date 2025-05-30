@@ -53,9 +53,14 @@ router.post('/send', authMiddleware, async (req, res) => {
     res.json({ message: botReply });
 
   } catch (error) {
-    console.error('Error calling Hugging Face API:', error.response?.data || error.message);
-    res.status(500).json({ message: 'Failed to get response from chatbot.' });
+  if (error.response) {
+    console.error('Hugging Face API error data:', error.response.data);
+    console.error('Hugging Face API error status:', error.response.status);
+  } else {
+    console.error('Error message:', error.message);
   }
+  res.status(500).json({ message: 'Failed to get response from chatbot.' });
+}
 });
 
 module.exports = router;
