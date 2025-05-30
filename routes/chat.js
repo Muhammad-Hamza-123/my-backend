@@ -30,16 +30,17 @@ router.post('/send', authMiddleware, async (req, res) => {
 
   try {
     const hfResponse = await axios.post(
-      'https://api-inference.huggingface.co/models/microsoft/DialoGPT-medium',  // ⚠️ SMALLER MODEL
-      { inputs: message },
-      {
-        headers: {
-          Authorization: `Bearer ${process.env.HUGGINGFACE_TOKEN}`,
-          'Content-Type': 'application/json',
-        },
-        timeout: 30000,
-      }
-    );
+  `https://api-inference.huggingface.co/models/gpt2`,
+  { inputs: message },
+  {
+    headers: {
+      Authorization: `Bearer ${process.env.HUGGINGFACE_TOKEN}`,
+      'Content-Type': 'application/json',
+    },
+    timeout: 30000,
+  }
+);
+
 
     const botReply = hfResponse.data?.generated_text || "Sorry, I couldn't generate a response.";
 
