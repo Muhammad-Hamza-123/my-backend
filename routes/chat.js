@@ -54,24 +54,29 @@ router.post('/send', authMiddleware, userLimiter, async (req, res) => {
         },
       }
     );
+
     console.log('OpenRouter API response:', JSON.stringify(response.data, null, 2));
 
+    if (!response.data.choices || response.data.choices.length === 0) {
+      console.error('OpenRouter API returned no choices:', response.data);
+      return res.status(500).json({ message: 'No response from chatbot API.' });
+    }
 
-    // Defensive access with optional chaining
-     if (!response.data.choices || response.data.choices.length === 0) {
-  console.error('OpenRouter API returned no choices:', response.data);
-  return res.status(500).json({ message: 'No response from chatbot API.' });
-}
-
-    const botReply = response.data.choices?.[0]?.message?.content?.trim();
+    const choice = response.data.choices[0];
+    const botReply = choice.message?.content?.trim();
+    const finishReason = choice.finish_reason;
 
     if (!botReply) {
       console.error('Bot reply is empty or undefined');
       return res.status(500).json({ message: 'Bot did not return any response.' });
     }
-   
 
-    // Save conversation only if botReply exists
+    if (finishReason !== 'stop') {
+      console.warn(`Warning: Bot reply might be incomplete. finish_reason: ${finishReason}`);
+      // Optional: you can append something here like:
+      // botReply += " ... (response might be incomplete)";
+    }
+
     let convo = await Conversation.findOne({ user: req.user._id });
     if (!convo) convo = new Conversation({ user: req.user._id, messages: [] });
 
@@ -91,6 +96,7 @@ router.post('/send', authMiddleware, userLimiter, async (req, res) => {
     res.status(500).json({ message: 'Failed to get response from chatbot.' });
   }
 });
+
 
 // Endpoint to get chat history
 router.get('/history', authMiddleware, async (req, res) => {
