@@ -14,7 +14,8 @@ const userLimiter = rateLimit({
   max: 7, // limit each user to 10 requests per window
   keyGenerator: (req) => req.user._id.toString(), // rate limit per user
   handler: (req, res) => {
-    return res.status(429).json({ message: 'Too many requests. Please wait and try again later.' });
+    console.log(`Rate limit hit by user: ${req.user?._id || 'unknown'}`);
+    return res.status(429).json({ message: 'Too many requests. Please wait 15 mins and try again later.' });
   },
 });
 router.post('/send', authMiddleware,userLimiter, async (req, res) => {
@@ -65,6 +66,8 @@ router.post('/send', authMiddleware,userLimiter, async (req, res) => {
     } else {
       console.error('OpenRouter API error:', error.message);
     }
+    console.error('Chatbot send error:', error.response?.status, error.response?.data || error.message);
+
     res.status(500).json({ message: 'Failed to get response from chatbot.' });
   }
 });
