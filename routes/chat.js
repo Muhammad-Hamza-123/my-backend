@@ -13,27 +13,29 @@ router.post('/send', authMiddleware, async (req, res) => {
 
   try {
     const response = await axios.post(
-      'https://openrouter.ai/api/v1/chat/completions',
+  'https://openrouter.ai/api/v1/chat/completions',
+  {
+    model: 'deepseek/deepseek-r1-0528-qwen3-8b:free',
+    messages: [
       {
-        model: 'deepseek/deepseek-r1-0528-qwen3-8b:free',
-        messages: [
-          {
-            role: 'system',
-            content: 'You are a compassionate and supportive mental health assistant. You help users cope with stress, anxiety, depression, and emotional issues. Always respond kindly and offer helpful, comforting advice.',
-          },
-          {
-            role: 'user',
-            content: message,
-          },
-        ],
+        role: 'system',
+        content: 'You are a compassionate and supportive mental health assistant. You help users cope with stress, anxiety, depression, and emotional issues. Always respond kindly and offer helpful, comforting advice in a concise and easy-to-understand manner. Keep your answers brief unless more detail is needed.',
       },
       {
-        headers: {
-          Authorization: `Bearer ${OPENROUTER_API_KEY}`,
-          'Content-Type': 'application/json',
-        },
-      }
-    );
+        role: 'user',
+        content: message,
+      },
+    ],
+    max_tokens: 300  // ⬅️ limits how long the reply can be
+  },
+  {
+    headers: {
+      Authorization: `Bearer ${OPENROUTER_API_KEY}`,
+      'Content-Type': 'application/json',
+    },
+  }
+);
+
 
     const botReply = response.data.choices[0].message.content.trim();
 
