@@ -21,7 +21,14 @@ const userLimiter = rateLimit({
 router.post('/send', authMiddleware, userLimiter, async (req, res) => {
   const { message } = req.body;
   if (!message) return res.status(400).json({ message: 'Message cannot be empty' });
+  const cleanMessage = message
+    .replace(/[^\w\s.,!?]/g, '')  // remove unwanted characters
+    .replace(/\s+/g, ' ')         // normalize whitespace
+    .trim();
 
+  if (cleanMessage.length === 0) {
+    return res.status(400).json({ message: 'Message cannot be empty after cleanup' });
+  }
   try {
     const response = await axios.post(
       'https://openrouter.ai/api/v1/chat/completions',
@@ -35,7 +42,7 @@ router.post('/send', authMiddleware, userLimiter, async (req, res) => {
           },
           {
             role: 'user',
-            content: message,
+            content: cleanMessage,
           },
         ],
         max_tokens: 300, // limits how long the reply can be
@@ -47,14 +54,22 @@ router.post('/send', authMiddleware, userLimiter, async (req, res) => {
         },
       }
     );
+    console.log('OpenRouter API response:', JSON.stringify(response.data, null, 2));
+
 
     // Defensive access with optional chaining
+     if (!response.data.choices || response.data.choices.length === 0) {
+  console.error('OpenRouter API returned no choices:', response.data);
+  return res.status(500).json({ message: 'No response from chatbot API.' });
+}
+
     const botReply = response.data.choices?.[0]?.message?.content?.trim();
 
     if (!botReply) {
       console.error('Bot reply is empty or undefined');
       return res.status(500).json({ message: 'Bot did not return any response.' });
     }
+   
 
     // Save conversation only if botReply exists
     let convo = await Conversation.findOne({ user: req.user._id });
