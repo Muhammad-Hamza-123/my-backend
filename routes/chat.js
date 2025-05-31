@@ -13,19 +13,27 @@ router.post('/send', authMiddleware, async (req, res) => {
 
   try {
     const response = await axios.post(
-  'https://openrouter.ai/api/v1/chat/completions',
-  {
-    model: 'deepseek/deepseek-r1-0528-qwen3-8b:free',
-    messages: [{ role: 'user', content: message }],
-  },
-  {
-    headers: {
-      Authorization: `Bearer ${OPENROUTER_API_KEY}`,
-      'Content-Type': 'application/json',
-    },
-  }
-);
-
+      'https://openrouter.ai/api/v1/chat/completions',
+      {
+        model: 'deepseek/deepseek-r1-0528-qwen3-8b:free',
+        messages: [
+          {
+            role: 'system',
+            content: 'You are a compassionate and supportive mental health assistant. You help users cope with stress, anxiety, depression, and emotional issues. Always respond kindly and offer helpful, comforting advice.',
+          },
+          {
+            role: 'user',
+            content: message,
+          },
+        ],
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${OPENROUTER_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+      }
+    );
 
     const botReply = response.data.choices[0].message.content.trim();
 
@@ -38,17 +46,18 @@ router.post('/send', authMiddleware, async (req, res) => {
     await convo.save();
 
     res.json({ message: botReply });
-  }catch (error) {
-  if (error.response) {
-    console.error('OpenRouter API response error:', error.response.status, error.response.data);
-  } else {
-    console.error('OpenRouter API error:', error.message);
-  }
+
+  } catch (error) {
+    if (error.response) {
+      console.error('OpenRouter API response error:', error.response.status, error.response.data);
+    } else {
+      console.error('OpenRouter API error:', error.message);
+    }
     res.status(500).json({ message: 'Failed to get response from chatbot.' });
   }
 });
 
-// New endpoint to get chat history
+// ✅ Endpoint to get chat history
 router.get('/history', authMiddleware, async (req, res) => {
   try {
     const convo = await Conversation.findOne({ user: req.user._id });
