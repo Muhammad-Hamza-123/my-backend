@@ -5,7 +5,7 @@ const authMiddleware = require('../middleware/authMiddleware');
 const Conversation = require('../models/conversation');
 require('dotenv').config();
 
-const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY; // put your key in .env file
+const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
 
 router.post('/send', authMiddleware, async (req, res) => {
   const { message } = req.body;
@@ -15,12 +15,12 @@ router.post('/send', authMiddleware, async (req, res) => {
     const response = await axios.post(
       'https://openrouter.ai/api/v1/chat/completions',
       {
-        model: 'gpt-3.5-turbo',  // OpenRouter supports this for compatibility
+        model: 'gpt-3.5-turbo',
         messages: [{ role: 'user', content: message }],
       },
       {
         headers: {
-          'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
+          Authorization: `Bearer ${OPENROUTER_API_KEY}`,
           'Content-Type': 'application/json',
         },
       }
@@ -37,13 +37,25 @@ router.post('/send', authMiddleware, async (req, res) => {
     await convo.save();
 
     res.json({ message: botReply });
-
-  } catch (error) {
-    console.error('OpenRouter API error:', error.response?.data || error.message);
-    if (error.response?.status === 429) {
-      return res.status(429).json({ message: 'OpenRouter quota exceeded. Please check your usage.' });
-    }
+  }catch (error) {
+  if (error.response) {
+    console.error('OpenRouter API response error:', error.response.status, error.response.data);
+  } else {
+    console.error('OpenRouter API error:', error.message);
+  }
     res.status(500).json({ message: 'Failed to get response from chatbot.' });
+  }
+});
+
+// New endpoint to get chat history
+router.get('/history', authMiddleware, async (req, res) => {
+  try {
+    const convo = await Conversation.findOne({ user: req.user._id });
+    if (!convo) return res.json({ history: [] });
+    res.json({ history: convo.messages });
+  } catch (err) {
+    console.error('Error fetching chat history:', err);
+    res.status(500).json({ message: 'Failed to fetch chat history' });
   }
 });
 
