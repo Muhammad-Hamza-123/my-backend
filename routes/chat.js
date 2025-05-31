@@ -1,13 +1,23 @@
 const express = require('express');
 const router = express.Router();
 const axios = require('axios');
+const rateLimit = require('express-rate-limit');
 const authMiddleware = require('../middleware/authMiddleware');
 const Conversation = require('../models/conversation');
 require('dotenv').config();
 
+
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
 
-router.post('/send', authMiddleware, async (req, res) => {
+const userLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 7, // limit each user to 10 requests per window
+  keyGenerator: (req) => req.user._id.toString(), // rate limit per user
+  handler: (req, res) => {
+    return res.status(429).json({ message: 'Too many requests. Please wait and try again later.' });
+  },
+});
+router.post('/send', authMiddleware,userLimiter, async (req, res) => {
   const { message } = req.body;
   if (!message) return res.status(400).json({ message: 'Message cannot be empty' });
 
