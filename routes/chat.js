@@ -13,18 +13,19 @@ router.post('/send', authMiddleware, async (req, res) => {
 
   try {
     const response = await axios.post(
-      'https://openrouter.ai/api/v1/chat/completions',
-      {
-        model: 'gpt-3.5-turbo',
-        messages: [{ role: 'user', content: message }],
-      },
-      {
-        headers: {
-          Authorization: `Bearer ${OPENROUTER_API_KEY}`,
-          'Content-Type': 'application/json',
-        },
-      }
-    );
+  'https://openrouter.ai/api/v1/chat/completions',
+  {
+    model: 'deepseek/deepseek-r1-0528-qwen3-8b:free',
+    messages: [{ role: 'user', content: message }],
+  },
+  {
+    headers: {
+      Authorization: `Bearer ${OPENROUTER_API_KEY}`,
+      'Content-Type': 'application/json',
+    },
+  }
+);
+
 
     const botReply = response.data.choices[0].message.content.trim();
 
